@@ -15,6 +15,7 @@ import { computeVat, formatVatRate } from '../lib/vat';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { DocumentsCard } from '../components/jobs/DocumentsCard';
 
 const VAT_OPTIONS = [0.2, 0.05, 0] as const;
 
@@ -414,6 +415,12 @@ export function JobDetailsPage() {
           </Card>
         </div>
       </form>
+
+      {isEdit && id && (
+        <div className="mt-6">
+          <DocumentsCard jobId={id} />
+        </div>
+      )}
     </div>
   );
 }

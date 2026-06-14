@@ -55,6 +55,16 @@ export function InvoicePage() {
     .filter((part) => part && part.trim())
     .join(' — ');
 
+  const emailSubject = `Invoice ${invoice.invoiceNumber}`;
+  const emailBody =
+    `Dear ${client?.name ?? 'Sir/Madam'},\n\n` +
+    `Please find invoice ${invoice.invoiceNumber} for ${formatGBP(invoice.grossTotalPence)}` +
+    `${invoice.dueDate ? `, due ${formatUK(invoice.dueDate)}` : ''}.\n\n` +
+    `Kind regards,\n${settings?.businessName ?? ''}`;
+  const mailtoHref = `mailto:${client?.email ?? ''}?subject=${encodeURIComponent(
+    emailSubject,
+  )}&body=${encodeURIComponent(emailBody)}`;
+
   return (
     <div>
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -74,6 +84,12 @@ export function InvoicePage() {
           <Button variant="primary" onClick={() => window.print()}>
             Print / Save PDF
           </Button>
+          <a
+            href={mailtoHref}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Email Client
+          </a>
           {invoice.status === 'draft' && (
             <Button
               variant="secondary"

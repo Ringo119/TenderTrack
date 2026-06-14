@@ -4,7 +4,7 @@ A job-planning and invoicing app for a quantity surveyor / estimator, replacing 
 Excel spreadsheets (a Gantt-style work programme and a job/invoice register) with a
 single tool. Design principle: *"Excel, but it updates itself and tells me what's due."*
 
-This repository contains **Phase 1 + Phase 2**.
+This repository contains **Phase 1 + Phase 2 + Phase 3**.
 
 ## Running it
 
@@ -23,47 +23,47 @@ data** to wipe and reseed.
 
 - **React 18 + TypeScript + Vite**
 - **React Router v6** — sidebar navigation across screens
-- **Dexie (IndexedDB)** — local, no-account persistence for the prototype
+- **Dexie (IndexedDB)** — local, no-account persistence
 - **TanStack Query** — data fetching/caching; mutations invalidate shared queries so
-  the Job Register, Planner, Dashboard, Invoices and Payments all stay in sync
+  every screen stays in sync automatically
 - **React Hook Form + Zod** — forms and the single source-of-truth data model
 - **date-fns** — UK date handling; **Tailwind CSS** — styling
 
-### Architecture: the Phase 3 swap point
+### Architecture: the backend swap point
 
 All data access goes through repository interfaces in
 `src/data/repositories/types.ts`. The UI only ever imports the hooks in `src/hooks`,
-never Dexie directly. To move to a Supabase/Firebase backend later, provide new
-repository implementations and re-point `src/data/repositories/index.ts` — no screen
-needs to change. Money is stored as integer **pence**; dates as ISO strings formatted
-to UK `dd/MM/yyyy` only at the display edge.
+never Dexie directly. To move to a Supabase/Firebase backend, provide new repository
+implementations and re-point `src/data/repositories/index.ts` — no screen needs to
+change. Money is stored as integer **pence**; dates as ISO strings formatted to UK
+`dd/MM/yyyy` only at the display edge.
 
 ## What's built
 
 ### Phase 1 — planning
-- **Dashboard** — jobs due this week / overdue, urgent-jobs list, quick actions
-- **Job Register** — searchable, status-filtered table (replaces the Excel list)
-- **Job Details** — full job form with live Net/VAT/Total preview, ASAP handling
-- **Programme Planner** — read-only CSS-grid Gantt, colour-coded by status
-- **Clients** — list + detail with the client's jobs and invoices
-- **Settings** — business details, default VAT, demo-data reset
+- **Dashboard**, **Job Register**, **Job Details** (live Net/VAT/Total preview, ASAP),
+  **Programme Planner** (CSS-grid Gantt), **Clients**, **Settings**.
 
 ### Phase 2 — invoicing & money
-- **Create Invoice** from a job — auto invoice number (`INV-2026-018`), VAT computed
-  from the job's fee, due date from the client's payment terms. Creating an invoice
-  advances the job to *Invoiced*; marking it paid advances the job to *Paid*.
-- **Invoice document** — a clean, printable invoice (Print / Save PDF via the browser),
-  with Mark Sent / Mark Paid actions and a status badge.
-- **Invoice Register** — all invoices with traffic-light status (🟢 Paid / 🟠 Sent / 🔴 Overdue).
-- **Payments** — outstanding invoices with due dates, overdue highlighting, Mark Paid.
-- **Reports** — total invoiced / paid / outstanding, VAT owed, fees by client,
-  monthly turnover, and workload by job status.
-- **Dashboard money tiles** — Invoices Outstanding and Awaiting Payment, now live.
+- **Create Invoice** from a job (auto number, VAT from the fee, due date from client
+  terms), printable **Invoice document**, **Invoice Register** (traffic-light status),
+  **Payments**, **Reports**, and live Dashboard money tiles. Status automation: invoice
+  created → job *Invoiced*; marked paid → job *Paid*.
 
-## Deferred (Phase 3)
+### Phase 3 — scheduling, reminders & documents
+- **Calendar** — monthly view of jobs by return date, with an ASAP/unscheduled strip.
+- **Drag-to-reschedule** — drag a bar on the Planner to shift a job's dates; persists
+  immediately (a plain click still opens the job).
+- **Reminders** — a bell in the top bar surfacing overdue/ASAP/due-soon jobs and
+  overdue/due-soon invoices, with optional best-effort desktop notifications.
+- **Per-job Documents** — attach tenders, drawings, BoQs, quotes and files to a job
+  (stored locally in IndexedDB), with download and remove.
+- **Email Client** — the invoice opens a pre-filled email via `mailto:`.
 
-Calendar view, reminders/notifications, email automation, drag-to-reschedule on the
-planner, and per-job document storage. PDF is currently handled via the browser's
+## Deferred / future
+
+A hosted backend (Supabase) for multi-device sync and real email automation; the
+repository seam keeps that a localized change. PDF is handled via the browser's
 "Save as PDF" on the invoice document.
 
 ## Project layout
@@ -73,9 +73,9 @@ src/
   data/
     models/         Zod schemas + types (the data model)
     repositories/   interfaces + Dexie implementations (backend swap point)
-    db.ts, seed.ts  Dexie database + demo data
+    db.ts, seed.ts  Dexie database (v2: + documents) + demo data
   hooks/            TanStack Query hooks wrapping the repositories
-  lib/              currency, dates, VAT, job/invoice status helpers
-  components/       layout (sidebar) + shared UI
+  lib/              currency, dates, VAT, job/invoice status, reminders, notify
+  components/       layout (sidebar, reminders bell) + shared UI + job widgets
   pages/            one component per screen
 ```

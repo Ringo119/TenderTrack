@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   addDays,
   differenceInCalendarDays,
@@ -9,13 +9,15 @@ import {
 } from 'date-fns';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
-import { useJobs } from '../hooks/useJobs';
+import { useJobs, useUpdateJob } from '../hooks/useJobs';
 import { useClients } from '../hooks/useClients';
 import { formatGBP } from '../lib/currency';
+import { toISODate } from '../lib/dates';
 import { STATUS_STYLES, visualStatus, type VisualStatus } from '../lib/jobStatus';
 import type { Job } from '../data/models/job';
 
 const LABEL_COL = 180;
+const DAY_W = 34; // fixed day-column width so drag maps pixels → days exactly
 const END_PADDING_DAYS = 4;
 
 /** A job's effective bar start/end as Dates, or null if it can't be placed. */
@@ -36,6 +38,14 @@ function jobBarRange(job: Job): { start: Date; end: Date } | null {
   return null;
 }
 
+/** Shift whichever real dates a job has by a number of days. */
+function shiftJobDates(job: Job, deltaDays: number): Partial<Job> {
+  const patch: Partial<Job> = {};
+  if (job.startDate) patch.startDate = toISODate(addDays(parseISO(job.startDate), deltaDays));
+  if (job.returnDate) patch.returnDate = toISODate(addDays(parseISO(job.returnDate), deltaDays));
+  return patch;
+}
+
 const LEGEND: { status: VisualStatus; label: string }[] = [
   { status: 'working', label: 'Working' },
   { status: 'planning', label: 'Planning' },
@@ -44,9 +54,20 @@ const LEGEND: { status: VisualStatus; label: string }[] = [
   { status: 'overdue', label: 'Overdue' },
 ];
 
+interface DragState {
+  jobId: string;
+  startX: number;
+  dayDelta: number;
+  moved: boolean;
+}
+
 export function PlannerPage() {
   const { data: jobs, isLoading } = useJobs();
   const { data: clients } = useClients();
+  const updateJob = useUpdateJob();
+  const navigate = useNavigate();
+
+  const [drag, setDrag] = useState<DragState | null>(null);
 
   const clientNames = useMemo(
     () => new Map((clients ?? []).map((c) => [c.id, c.name])),
@@ -110,13 +131,45 @@ export function PlannerPage() {
   }
 
   const days = Array.from({ length: totalDays }, (_, i) => addDays(windowStart, i));
-  const gridTemplateColumns = `${LABEL_COL}px repeat(${totalDays}, minmax(28px,1fr))`;
+  const gridTemplateColumns = `${LABEL_COL}px repeat(${totalDays}, ${DAY_W}px)`;
+
+  const handlePointerDown = (e: React.PointerEvent, job: Job) => {
+    e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    setDrag({ jobId: job.id, startX: e.clientX, dayDelta: 0, moved: false });
+  };
+
+  const handlePointerMove = (e: React.PointerEvent, job: Job) => {
+    setDrag((d) => {
+      if (!d || d.jobId !== job.id) return d;
+      const dayDelta = Math.round((e.clientX - d.startX) / DAY_W);
+      const moved = d.moved || Math.abs(e.clientX - d.startX) > 3;
+      if (dayDelta === d.dayDelta && moved === d.moved) return d;
+      return { ...d, dayDelta, moved };
+    });
+  };
+
+  const handlePointerUp = (job: Job) => {
+    setDrag((d) => {
+      if (!d || d.jobId !== job.id) return null;
+      if (d.dayDelta !== 0) {
+        const patch = shiftJobDates(job, d.dayDelta);
+        if (Object.keys(patch).length > 0) {
+          updateJob.mutate({ id: job.id, patch });
+        }
+      } else if (!d.moved) {
+        // A plain click opens the job.
+        navigate(`/jobs/${job.id}`);
+      }
+      return null;
+    });
+  };
 
   return (
     <div>
       <PageHeader
         title="Planner"
-        subtitle="Your jobs across the weeks ahead — coloured by status."
+        subtitle="Your jobs across the weeks ahead — drag a bar to reschedule."
       />
 
       {/* Legend */}
@@ -151,7 +204,7 @@ export function PlannerPage() {
       )}
 
       <Card className="overflow-x-auto p-4">
-        <div className="min-w-max">
+        <div className="min-w-max select-none">
           {/* Month label row */}
           <div className="grid" style={{ gridTemplateColumns }}>
             <div className="sticky left-0 z-10 bg-white" />
@@ -203,6 +256,8 @@ export function PlannerPage() {
             const endCol = startCol + barLength;
             const style = STATUS_STYLES[visualStatus(job)];
             const clientName = clientNames.get(job.clientId) ?? 'Unknown';
+            const isDragging = drag?.jobId === job.id;
+            const offsetX = isDragging ? drag.dayDelta * DAY_W : 0;
 
             return (
               <div
@@ -222,17 +277,29 @@ export function PlannerPage() {
                   )}
                 </Link>
 
-                {/* The bar, placed by grid column span */}
-                <Link
-                  to={`/jobs/${job.id}`}
-                  className={`my-1 flex h-6 items-center overflow-hidden rounded px-2 ${style.bar}`}
-                  style={{ gridColumn: `${startCol} / ${endCol}` }}
-                  title={`${style.label} · ${formatGBP(job.feeNetPence)}`}
+                {/* The bar — draggable to reschedule; a plain click opens the job. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onPointerDown={(e) => handlePointerDown(e, job)}
+                  onPointerMove={(e) => handlePointerMove(e, job)}
+                  onPointerUp={() => handlePointerUp(job)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') navigate(`/jobs/${job.id}`);
+                  }}
+                  className={`my-1 flex h-6 touch-none items-center overflow-hidden rounded px-2 ${style.bar} ${
+                    isDragging ? 'cursor-grabbing opacity-90 ring-2 ring-slate-900/20' : 'cursor-grab'
+                  }`}
+                  style={{
+                    gridColumn: `${startCol} / ${endCol}`,
+                    transform: offsetX ? `translateX(${offsetX}px)` : undefined,
+                  }}
+                  title={`${style.label} · ${formatGBP(job.feeNetPence)} — drag to reschedule`}
                 >
                   <span className="truncate text-xs text-white">
                     {job.project || formatGBP(job.feeNetPence)}
                   </span>
-                </Link>
+                </div>
               </div>
             );
           })}
