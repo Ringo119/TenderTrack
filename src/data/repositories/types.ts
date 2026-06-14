@@ -2,6 +2,7 @@ import type { Client } from '../models/client';
 import type { Job, JobStatus } from '../models/job';
 import type { Invoice } from '../models/invoice';
 import type { Settings } from '../models/settings';
+import type { JobDocument } from '../models/document';
 
 /**
  * Repository interfaces — the seam between the UI and persistence.
@@ -58,4 +59,10 @@ export interface InvoiceRepository {
 export interface SettingsRepository {
   get(): Promise<Settings>;
   update(patch: Partial<Settings>): Promise<Settings>;
+}
+
+export interface DocumentRepository {
+  listByJob(jobId: string): Promise<JobDocument[]>;
+  create(data: Omit<JobDocument, 'id' | 'createdAt'>): Promise<JobDocument>;
+  remove(id: string): Promise<void>;
 }

@@ -11,7 +11,7 @@ import { InvoicePage } from './pages/InvoicePage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
+import { CalendarPage } from './pages/CalendarPage';
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +23,7 @@ export const router = createBrowserRouter([
       { path: 'jobs/new', element: <JobDetailsPage /> },
       { path: 'jobs/:id', element: <JobDetailsPage /> },
       { path: 'planner', element: <PlannerPage /> },
+      { path: 'calendar', element: <CalendarPage /> },
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/:id', element: <ClientDetailsPage /> },
       { path: 'invoices', element: <InvoiceRegisterPage /> },
@@ -30,16 +31,6 @@ export const router = createBrowserRouter([
       { path: 'payments', element: <PaymentsPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'settings', element: <SettingsPage /> },
-      {
-        path: 'calendar',
-        element: (
-          <ComingSoonPage
-            title="Calendar"
-            phase="Phase 3"
-            description="A day-by-day calendar view for arranging meetings. The Planner already covers scheduling for now."
-          />
-        ),
-      },
     ],
   },
 ]);

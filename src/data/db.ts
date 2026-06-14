@@ -3,17 +3,19 @@ import type { Client } from './models/client';
 import type { Job } from './models/job';
 import type { Invoice } from './models/invoice';
 import type { Settings } from './models/settings';
+import type { JobDocument } from './models/document';
 
 /**
- * Local IndexedDB database (via Dexie). This is the Phase 1 persistence layer.
+ * Local IndexedDB database (via Dexie). This is the local persistence layer.
  * It is intentionally hidden behind the repository interfaces in
- * ./repositories so that Phase 2 can swap to Supabase without touching the UI.
+ * ./repositories so that a future backend can be swapped in without touching the UI.
  */
 export class TenderTrackDB extends Dexie {
   clients!: Table<Client, string>;
   jobs!: Table<Job, string>;
   invoices!: Table<Invoice, string>;
   settings!: Table<Settings, string>;
+  documents!: Table<JobDocument, string>;
 
   constructor() {
     super('tendertrack');
@@ -24,6 +26,10 @@ export class TenderTrackDB extends Dexie {
       jobs: 'id, jobNumber, clientId, status, returnDate, isAsap',
       invoices: 'id, invoiceNumber, jobId, clientId, status',
       settings: 'id',
+    });
+    // v2: per-job document attachments (Phase 3).
+    this.version(2).stores({
+      documents: 'id, jobId, createdAt',
     });
   }
 }

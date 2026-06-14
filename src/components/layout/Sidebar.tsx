@@ -11,6 +11,7 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: '🏠' },
   { to: '/jobs', label: 'Jobs', icon: '📁' },
   { to: '/planner', label: 'Planner', icon: '📅' },
+  { to: '/calendar', label: 'Calendar', icon: '🗓️' },
   { to: '/clients', label: 'Clients', icon: '👥' },
   { to: '/invoices', label: 'Invoices', icon: '💷' },
   { to: '/payments', label: 'Payments', icon: '✅' },
@@ -49,7 +50,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="px-5 py-4 text-xs text-slate-400">Phase 2</div>
+      <div className="px-5 py-4 text-xs text-slate-400">Phase 3</div>
     </aside>
   );
 }
