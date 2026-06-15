@@ -5,8 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TenderTrack</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;font-family:sans-serif">
+    <div id="root">
+      <div id="app-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:1rem">
+        <div style="font-size:2rem">📐</div>
+        <p style="margin:0;color:#475569">Loading TenderTrack…</p>
+        <p id="app-error" style="margin:0;color:#ef4444;font-size:0.875rem;max-width:600px;text-align:center;white-space:pre-wrap"></p>
+      </div>
+    </div>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        var el = document.getElementById('app-error');
+        if (el) el.textContent = 'JS Error: ' + msg + (src ? '\n' + src + ':' + line : '');
+        return false;
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.getElementById('app-error');
+        if (el) el.textContent = 'Unhandled promise: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason));
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
