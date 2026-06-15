@@ -22,7 +22,7 @@ export function DashboardPage() {
   if (isLoading) {
     return (
       <div>
-        <PageHeader title="Good morning, David" subtitle="Here's where things stand today." />
+        <PageHeader title="Good morning, Nick" subtitle="Here's where things stand today." />
         <Card className="p-8 text-center text-sm text-slate-500">Loading your day…</Card>
       </div>
     );
@@ -69,7 +69,7 @@ export function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Good morning, David"
+        title="Good morning, Nick"
         subtitle="Here's where things stand today."
         actions={
           <Button variant="primary" onClick={() => navigate('/jobs/new')}>
