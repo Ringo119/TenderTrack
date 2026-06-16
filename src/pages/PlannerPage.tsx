@@ -203,8 +203,12 @@ export function PlannerPage() {
         </Card>
       )}
 
-      <Card className="overflow-x-auto p-4">
-        <div className="min-w-max select-none">
+      <Card className="p-4">
+        {/* The scroll container has no horizontal padding so its clip edge lines
+            up with the sticky label column — otherwise scrolled bars bleed into
+            the padding strip to the left of each name. */}
+        <div className="overflow-x-auto">
+          <div className="min-w-max select-none">
           {/* Month label row */}
           <div className="grid" style={{ gridTemplateColumns }}>
             <div className="sticky left-0 z-10 bg-white" />
@@ -303,6 +307,7 @@ export function PlannerPage() {
               </div>
             );
           })}
+          </div>
         </div>
       </Card>
     </div>
